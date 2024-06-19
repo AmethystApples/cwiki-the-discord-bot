@@ -6,7 +6,7 @@ DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
 
 import discord 
 
-bot=discord.Client()
+bot = discord.Client(intents=discord.Intents.default())
 
 @bot.event
 
@@ -29,4 +29,4 @@ async def on_message(message):
 		await message.channel.send("hey dirtbag")
 
 # EXECUTES THE BOT WITH THE SPECIFIED TOKEN. TOKEN HAS BEEN REMOVED AND USED JUST AS AN EXAMPLE.
-bot.run(DISCORD_TOKEN)
+bot.run("MTI1Mjk4MTE2NjE4MTcxMTg3NA.GplJmK.CAPGvqFNy1OlfgSMtWznlTsd_HOov-VWRJVlyI")
