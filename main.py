@@ -37,10 +37,7 @@ async def on_message(message):
 	# CHECKS IF THE MESSAGE THAT WAS SENT IS EQUAL TO "HELLO".
     if message.content == "hello":
         # SENDS A MESSAGE BACK TO THE CHANNEL.
-        print("hi")
-        channel = bot.get_channel(STARTUP_CHANNEL_ID)
-        if channel:
-            await channel.send("SampleDiscordBot has started and is now online!")
+        await message.channel.send("hey dirtbag")
 
 # EXECUTES THE BOT WITH THE SPECIFIED TOKEN. TOKEN HAS BEEN REMOVED AND USED JUST AS AN EXAMPLE.
 bot.run("MTI1Mjk4MTE2NjE4MTcxMTg3NA.GplJmK.CAPGvqFNy1OlfgSMtWznlTsd_HOov-VWRJVlyI")
