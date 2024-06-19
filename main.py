@@ -6,7 +6,12 @@ DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
 
 import discord 
 
-bot = discord.Client(intents=discord.Intents.default())
+intents=discord.Intents.default()
+intents.message_content = True
+intents.messages = True
+intents.members = True
+
+bot = discord.Client(intents = intents)
 
 STARTUP_CHANNEL_ID = 1252983015169196177
 
@@ -30,8 +35,8 @@ async def on_ready():
 @bot.event
 async def on_message(message):
 	# CHECKS IF THE MESSAGE THAT WAS SENT IS EQUAL TO "HELLO".
-	if message.content == "hello":
-		# SENDS BACK A MESSAGE TO THE CHANNEL.
+    if message.content == "hello":
+        # SENDS A MESSAGE BACK TO THE CHANNEL.
         print("hi")
         channel = bot.get_channel(STARTUP_CHANNEL_ID)
         if channel:
