@@ -30,11 +30,7 @@ async def on_ready():
 @bot.event
 async def on_message(message):
 	# CHECKS IF THE MESSAGE THAT WAS SENT IS EQUAL TO "HELLO".
-    #if message.author == bot.user:
-    #    return
-
-    print("wow, i just got a message")
-    if message.content == "hello":
+	if message.content == "hello":
 		# SENDS BACK A MESSAGE TO THE CHANNEL.
         print("hi")
         channel = bot.get_channel(STARTUP_CHANNEL_ID)
