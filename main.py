@@ -51,10 +51,11 @@ async def on_message(message):
         await message.channel.send("hey dirtbag")
         sender=str(message.author.id)
         user=str(message.author.name)
-        if c.execute("SELECT discordid FROM cwiki_schema.accounts WHERE EXISTS(SELECT * FROM cwiki_schema.accounts WHERE discordid=%s)", (sender,)):
-            c.execute("SELECT username FROM accounts WHERE discordid=%s", (sender,))
-            username=c.fetchone()
-            await message.channel.send("Username: "+str(username[0]))
+        c.execute("SELECT discordid FROM cwiki_schema.accounts WHERE EXISTS(SELECT * FROM cwiki_schema.accounts WHERE discordid=%s)", (sender,))
+        if c.fetchone():
+            #c.execute("SELECT username FROM accounts WHERE discordid=%s", (sender,))
+            #username=c.fetchone()
+            #await message.channel.send("Username: "+str(username[0]))
             print("user found")
         else: 
             # c.execute("INSERT INTO cwiki_schema.accounts (discordid, username) VALUES (%s, %s)", (sender, user))
