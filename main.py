@@ -1,4 +1,5 @@
 import os
+import mysql.connector
 from dotenv import load_dotenv
 load_dotenv()
 # Grab the API token from the .env file.
@@ -15,7 +16,17 @@ bot = discord.Client(intents = intents)
 
 STARTUP_CHANNEL_ID = 1252983015169196177
 
+conn = mysql.connector.connect(host="localhost",user="root", password="8o0k3d@ndW0ok3d",database="cwiki_schema")
+conn.commit=True
+c=conn.cursor(buffered=True)
+
 @bot.event
+
+#async def test(ctx):
+#    sender=str(ctx.author.id)
+#    c.execute("SELECT username FROM accounts WHERE discordid=%s", (sender,))
+#    username=c.fetchone()
+#    await ctx.respond("Username: "+str(username[0]))
 
 async def on_ready():
     guild_count=0
@@ -38,6 +49,12 @@ async def on_message(message):
     if message.content == "hello":
         # SENDS A MESSAGE BACK TO THE CHANNEL.
         await message.channel.send("hey dirtbag")
+        sender=str(message.author.id)
+        c.execute("SELECT username FROM accounts WHERE discordid=%s", (sender,))
+        username=c.fetchone()
+       # await message.respond("Username: "+str(username[0]))
+        await message.channel.send("Username: "+str(username[0]))
+
 
 # EXECUTES THE BOT WITH THE SPECIFIED TOKEN. TOKEN HAS BEEN REMOVED AND USED JUST AS AN EXAMPLE.
 bot.run("MTI1Mjk4MTE2NjE4MTcxMTg3NA.GplJmK.CAPGvqFNy1OlfgSMtWznlTsd_HOov-VWRJVlyI")
