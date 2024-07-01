@@ -17,7 +17,7 @@ bot = discord.Client(intents = intents)
 STARTUP_CHANNEL_ID = 1252983015169196177
 
 conn = mysql.connector.connect(host="localhost",user="root", password="8o0k3d@ndW0ok3d",database="cwiki_schema")
-conn.commit=True
+
 c=conn.cursor(buffered=True)
 
 @bot.event
@@ -51,13 +51,17 @@ async def on_message(message):
         await message.channel.send("hey dirtbag")
         sender=str(message.author.id)
         user=str(message.author.name)
+        if c.execute("SELECT discordid FROM cwiki_schema.accounts WHERE EXISTS(SELECT * FROM cwiki_schema.accounts WHERE discordid=%s)", (sender,)):
+            c.execute("SELECT username FROM accounts WHERE discordid=%s", (sender,))
+            username=c.fetchone()
+            await message.channel.send("Username: "+str(username[0]))
+            print("user found")
+        else: 
+            # c.execute("INSERT INTO cwiki_schema.accounts (discordid, username) VALUES (%s, %s)", (sender, user))
+            # conn.commit()
+            print("user not found")
+        # await message.channel.send(user)
         
-       # c.execute("INSERT INTO `cwiki_schema`.`accounts` (`id`, `discordid`, `username`) VALUES ('2', '"+sender+"', '"+user+"')")
-
-        #await message.channel.send(user)
-        c.execute("SELECT username FROM accounts WHERE discordid=%s", (sender,))
-        username=c.fetchone()
-        await message.channel.send("Username: "+str(username[0]))
 
 
 # EXECUTES THE BOT WITH THE SPECIFIED TOKEN. TOKEN HAS BEEN REMOVED AND USED JUST AS AN EXAMPLE.
