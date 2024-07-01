@@ -50,9 +50,13 @@ async def on_message(message):
         # SENDS A MESSAGE BACK TO THE CHANNEL.
         await message.channel.send("hey dirtbag")
         sender=str(message.author.id)
+        user=str(message.author.name)
+        
+       # c.execute("INSERT INTO `cwiki_schema`.`accounts` (`id`, `discordid`, `username`) VALUES ('2', '"+sender+"', '"+user+"')")
+
+        #await message.channel.send(user)
         c.execute("SELECT username FROM accounts WHERE discordid=%s", (sender,))
         username=c.fetchone()
-       # await message.respond("Username: "+str(username[0]))
         await message.channel.send("Username: "+str(username[0]))
 
 
