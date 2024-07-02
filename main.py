@@ -7,13 +7,17 @@ DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
 
 import discord
 from discord.ext import commands 
+from discord import app_commands
 
 intents=discord.Intents.all()
 intents.message_content = True
 intents.messages = True
 intents.members = True
 
+
 bot = commands.Bot(command_prefix='/', intents = intents)
+
+
 
 STARTUP_CHANNEL_ID = 1252983015169196177
 
@@ -68,8 +72,10 @@ async def on_message(message):
             conn.commit()
             print("user not found")
         # await message.channel.send(user)
-        
 
+@bot.hybrid_command(name="entry", description="define a term")        
+async def entry(message, word: str = "term", definition: str ="your entry"):
+    await message.send("Here is your word "+word+" and definitions "+definition)
 
 # EXECUTES THE BOT WITH THE SPECIFIED TOKEN. TOKEN HAS BEEN REMOVED AND USED JUST AS AN EXAMPLE.
 bot.run("MTI1Mjk4MTE2NjE4MTcxMTg3NA.GplJmK.CAPGvqFNy1OlfgSMtWznlTsd_HOov-VWRJVlyI")
