@@ -1,6 +1,8 @@
 import os
 import mysql.connector
 from dotenv import load_dotenv
+from datetime import date
+
 load_dotenv()
 # Grab the API token from the .env file.
 DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
@@ -76,6 +78,44 @@ async def on_message(message):
 @bot.hybrid_command(name="entry", description="define a term")        
 async def entry(message, word: str = "term", definition: str ="your entry"):
     await message.send("Here is your word "+word+" and definitions "+definition)
+    server=str(message.guild.id)
+
+    #add word
+    #need to check if word already exists in server
+    c.execute("INSERT INTO cwiki_schema.words (serverid, wordname) VALUES (%s, %s)", (server, word))
+    conn.commit()
+
+    #add user
+    sender=str(message.author.id)
+    user=str(message.author.name)
+    c.execute("SELECT discordid FROM cwiki_schema.accounts WHERE EXISTS(SELECT * FROM cwiki_schema.accounts WHERE discordid=%s)", (sender,))
+    if c.fetchone():
+        c.execute("SELECT username FROM accounts WHERE discordid=%s", (sender,))
+        username=c.fetchone()
+        await message.channel.send("Username: "+str(username[0]))
+        print("user found")
+    else: 
+        c.execute("INSERT INTO cwiki_schema.accounts (discordid, username) VALUES (%s, %s)", (sender, user))
+        conn.commit()
+        print("user not found")
+
+    #find user id and word id
+    c.execute("SELECT userid FROM cwiki_schema.accounts WHERE discordid=%s", (sender,))
+    temp=c.fetchone()
+    userid= int(temp[0])
+    print(userid)
+    c.execute("SELECT wordid FROM cwiki_schema.words WHERE wordname=%s", (word,))
+    temp=c.fetchone()
+    wordid=int(temp[0])
+    print(wordid)
+
+    #add definition
+    today = date.today()
+    print(today)
+
+    c.execute("INSERT INTO cwiki_schema.definitions (wordid, definition, userid, date) VALUES (%s, %s, %s, %s)", (wordid, definition, userid, today))
+    conn.commit()
+
 
 # EXECUTES THE BOT WITH THE SPECIFIED TOKEN. TOKEN HAS BEEN REMOVED AND USED JUST AS AN EXAMPLE.
 bot.run("MTI1Mjk4MTE2NjE4MTcxMTg3NA.GplJmK.CAPGvqFNy1OlfgSMtWznlTsd_HOov-VWRJVlyI")
