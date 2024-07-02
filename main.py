@@ -5,14 +5,15 @@ load_dotenv()
 # Grab the API token from the .env file.
 DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
 
-import discord 
+import discord
+from discord.ext import commands 
 
-intents=discord.Intents.default()
+intents=discord.Intents.all()
 intents.message_content = True
 intents.messages = True
 intents.members = True
 
-bot = discord.Client(intents = intents)
+bot = commands.Bot(command_prefix='/', intents = intents)
 
 STARTUP_CHANNEL_ID = 1252983015169196177
 
@@ -20,7 +21,12 @@ conn = mysql.connector.connect(host="localhost",user="root", password="8o0k3d@nd
 
 c=conn.cursor(buffered=True)
 
+@bot.hybrid_command()
+async def ping(message: commands.Context):
+    await message.send('pong')
+
 @bot.event
+
 
 #async def test(ctx):
 #    sender=str(ctx.author.id)
@@ -38,7 +44,7 @@ async def on_ready():
         guild_count = guild_count + 1
         
     print("SampleDiscordBot is in " + str(guild_count) + " guilds.")
-
+    await bot.tree.sync()
     #channel = bot.get_channel(STARTUP_CHANNEL_ID)
     #if channel:
     #   await channel.send("SampleDiscordBot has started and is now online!")
