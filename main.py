@@ -125,32 +125,35 @@ async def define(message, word: str = "term", member:discord.Member = None):
     if temp:
         wordid = int(temp[0])
         print(wordid)
-        c.execute("SELECT definitionid FROM definitions WHERE wordid=%s", (wordid))
-        temp = c.fetchone()
+        c.execute("SELECT definitionid FROM definitions WHERE wordid=%s", (wordid,))
+        temp = c.fetchall()
         if temp:
             i = 0
             for x in temp:
-                definitionid=int(temp[0])
+                definitionid=int(x[0])
                 i += 1
-                c.execute("SELECT date FROM definitions WHERE definitionid=%s", (definitionid))
+                c.execute("SELECT date FROM definitions WHERE definitionid=%s", (definitionid,))
                 temp1 = c.fetchone()
-                date = int(temp1[0])
+                date = str(temp1[0])
                 embed = discord.Embed(title=word, description=date, color=discord.Color.random())
-                c.execute("SELECT userid FROM definitions WHERE definitionid=%s", (definitionid))
+                c.execute("SELECT userid FROM definitions WHERE definitionid=%s", (definitionid,))
                 temp1 = c.fetchone()
                 userid = int(temp1[0])
-                member = message.server.get_member(id)
+                c.execute("SELECT discordid FROM accounts WHERE userid=%s", (userid,))
+                temp1 = c.fetchone()
+                discordid = int(temp1[0])
+                member = message.guild.get_member(discordid)
                 embed.set_author(name=member.display_name, icon_url=member.display_avatar)
-                c.execute("SELECT definition FROM definitions WHERE definitionid=%s", (definitionid))
+                c.execute("SELECT definition FROM definitions WHERE definitionid=%s", (definitionid,))
                 temp1 = c.fetchone()
                 definition = str(temp1[0])
                 embed.add_field(name="Definition", value=definition)
-                embed.set_footer(text=i+" out of "+temp.len()+" definitions")
+                embed.set_footer(text=f"{i} out of {len(temp)} definitions")
                 await message.send(embed=embed)
         else:
-          await message.send("No result found!")    
+          await message.send("No result found! 1")    
     else:
-        await message.send("No result found!")
+        await message.send("No result found! 2")
                 
 
 
