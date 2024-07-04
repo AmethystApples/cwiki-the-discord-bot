@@ -116,6 +116,18 @@ async def entry(message, word: str = "term", definition: str ="your entry"):
     c.execute("INSERT INTO cwiki_schema.definitions (wordid, definition, userid, date) VALUES (%s, %s, %s, %s)", (wordid, definition, userid, today))
     conn.commit()
 
+@bot.hybrid_command(name="define", description="get a term's deininition")
+async def define(message, word: str = "term", member:discord.Member = None):
+    server = str(message.guild.id)
+    c.execute("SELECT wordid FROM words WHERE wordname=%s AND serverid=%s", (word,server,))
+    
+    if c.fetchone():
+        wordid = c.fetchone()
+        c.execute("SELECT definitionid FROM definitions WHERE wordid=%s", (wordid))
+        if c.fetchone():
+            definitionid = c.fetchone()
+        
+        
 
 # EXECUTES THE BOT WITH THE SPECIFIED TOKEN. TOKEN HAS BEEN REMOVED AND USED JUST AS AN EXAMPLE.
 bot.run("MTI1Mjk4MTE2NjE4MTcxMTg3NA.GplJmK.CAPGvqFNy1OlfgSMtWznlTsd_HOov-VWRJVlyI")
