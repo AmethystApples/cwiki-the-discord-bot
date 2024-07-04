@@ -121,13 +121,13 @@ async def define(message, word: str = "term", member:discord.Member = None):
     server = str(message.guild.id)
     c.execute("SELECT wordid FROM words WHERE wordname=%s AND serverid=%s", (word,server,))
     
-    if c.fetchone():
-        temp = c.fetchone()
+    temp = c.fetchone()
+    if temp:
         wordid = int(temp[0])
-        
+        print(wordid)
         c.execute("SELECT definitionid FROM definitions WHERE wordid=%s", (wordid))
-        if c.fetchone():
-            temp = c.fetchone()
+        temp = c.fetchone()
+        if temp:
             i = 0
             for x in temp:
                 definitionid=int(temp[0])
