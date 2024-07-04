@@ -122,11 +122,38 @@ async def define(message, word: str = "term", member:discord.Member = None):
     c.execute("SELECT wordid FROM words WHERE wordname=%s AND serverid=%s", (word,server,))
     
     if c.fetchone():
-        wordid = c.fetchone()
+        temp = c.fetchone()
+        wordid = int(temp[0])
+        
         c.execute("SELECT definitionid FROM definitions WHERE wordid=%s", (wordid))
         if c.fetchone():
-            definitionid = c.fetchone()
-        
+            temp = c.fetchone()
+            i = 0
+            for x in temp:
+                definitionid=int(temp[0])
+                i += 1
+                c.execute("SELECT date FROM definitions WHERE definitionid=%s", (definitionid))
+                temp1 = c.fetchone()
+                date = int(temp1[0])
+                embed = discord.Embed(title=word, description=date, color=discord.Color.random())
+                c.execute("SELECT userid FROM definitions WHERE definitionid=%s", (definitionid))
+                temp1 = c.fetchone()
+                userid = int(temp1[0])
+                member = message.server.get_member(id)
+                embed.set_author(name=member.display_name, icon_url=member.display_avatar)
+                c.execute("SELECT definition FROM definitions WHERE definitionid=%s", (definitionid))
+                temp1 = c.fetchone()
+                definition = str(temp1[0])
+                embed.add_field(name="Definition", value=definition)
+                embed.set_footer(text=i+" out of "+temp.len()+" definitions")
+                await message.send(embed=embed)
+        else:
+          await message.send("No result found!")    
+    else:
+        await message.send("No result found!")
+                
+
+
         
 
 # EXECUTES THE BOT WITH THE SPECIFIED TOKEN. TOKEN HAS BEEN REMOVED AND USED JUST AS AN EXAMPLE.
