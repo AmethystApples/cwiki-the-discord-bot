@@ -11,6 +11,7 @@ import discord
 from discord.ext import commands 
 from discord import app_commands
 
+
 intents=discord.Intents.all()
 intents.message_content = True
 intents.messages = True
@@ -32,8 +33,6 @@ async def ping(message: commands.Context):
     await message.send('pong')
 
 @bot.event
-
-
 #async def test(ctx):
 #    sender=str(ctx.author.id)
 #    c.execute("SELECT username FROM accounts WHERE discordid=%s", (sender,))
@@ -116,44 +115,92 @@ async def entry(message, word: str = "term", definition: str ="your entry"):
     c.execute("INSERT INTO cwiki_schema.definitions (wordid, definition, userid, date) VALUES (%s, %s, %s, %s)", (wordid, definition, userid, today))
     conn.commit()
 
-@bot.hybrid_command(name="define", description="get a term's deininition")
-async def define(message, word: str = "term", member:discord.Member = None):
-    server = str(message.guild.id)
-    c.execute("SELECT wordid FROM words WHERE wordname=%s AND serverid=%s", (word,server,))
-    
-    temp = c.fetchone()
-    if temp:
-        wordid = int(temp[0])
-        print(wordid)
-        c.execute("SELECT definitionid FROM definitions WHERE wordid=%s", (wordid,))
-        temp = c.fetchall()
+
+class DefView(discord.ui.View):
+    current: int = 0
+    max: int = 1
+    word: str = "term"
+    member: discord.Member = None
+    server: str = ""
+
+
+    async def send(self, message, word: str = "term", member: discord.Member = None):
+        self.word = word
+        self.member = member
+        self.server = str(message.guild.id)
+        print(self.word)
+        print(self.server)
+        c.execute("SELECT wordid FROM words WHERE wordname=%s AND serverid=%s", (self.word,self.server,))
+        temp = c.fetchone()
         if temp:
-            i = 0
-            for x in temp:
-                definitionid=int(x[0])
-                i += 1
+            wordid = int(temp[self.current])
+            c.execute("SELECT definitionid FROM definitions WHERE wordid=%s", (wordid,))
+            if temp:
+                self.max = len(temp)
+            else:
+                print("[in send] wasn't able to fetch list of definitions")
+        else:
+            print("[in send] wasn't able to get words")
+        print(self.max)
+        self.message = await message.send(view = self)
+        
+    
+    def create_page(self):
+        c.execute("SELECT wordid FROM words WHERE wordname=%s AND serverid=%s", (self.word,self.server,))
+    
+        temp = c.fetchone()
+        if temp:
+            print(self.current)
+            wordid = int(temp[0])
+            print(wordid)
+            c.execute("SELECT definitionid FROM definitions WHERE wordid=%s", (wordid,))
+            temp = c.fetchall()
+            if temp:
+                definitionid=int(temp[self.current][0])
                 c.execute("SELECT date FROM definitions WHERE definitionid=%s", (definitionid,))
                 temp1 = c.fetchone()
                 date = str(temp1[0])
-                embed = discord.Embed(title=word, description=date, color=discord.Color.random())
+                embed = discord.Embed(title=self.word, description=date, color=discord.Color.random())
                 c.execute("SELECT userid FROM definitions WHERE definitionid=%s", (definitionid,))
                 temp1 = c.fetchone()
                 userid = int(temp1[0])
                 c.execute("SELECT discordid FROM accounts WHERE userid=%s", (userid,))
                 temp1 = c.fetchone()
                 discordid = int(temp1[0])
-                member = message.guild.get_member(discordid)
+                member = self.message.guild.get_member(discordid)
                 embed.set_author(name=member.display_name, icon_url=member.display_avatar)
                 c.execute("SELECT definition FROM definitions WHERE definitionid=%s", (definitionid,))
                 temp1 = c.fetchone()
                 definition = str(temp1[0])
                 embed.add_field(name="Definition", value=definition)
-                embed.set_footer(text=f"{i} out of {len(temp)} definitions")
-                await message.send(embed=embed)
+                embed.set_footer(text=f"{self.current+1} out of {len(temp)} definitions")
+                return embed
+            else:
+                print("[in create] wasn't able to fetch list of definitions")
         else:
-          await message.send("No result found! 1")    
-    else:
-        await message.send("No result found! 2")
+            print("[in create] wasn't able to get words")
+
+    async def update_page(self):
+        await self.message.edit(embed = self.create_page(), view = self)
+
+
+    @discord.ui.button(label=":arrow_forward:", style=discord.ButtonStyle.blurple)
+    async def next_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.response.defer()
+        print(f"max {self.max}")
+        print(f"current {self.current}")
+        self.current += 1
+        if self.current >= self.max:
+            self.current = 0
+        await self.update_page()
+
+
+
+@bot.hybrid_command(name="define", description="get a term's deininition")
+async def define(message, word: str = "term", member:discord.Member = None):
+    definition_view = DefView(timeout=None)
+    word = word.upper()
+    await definition_view.send(message, word, member)
                 
 
 
