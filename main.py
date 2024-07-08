@@ -81,8 +81,13 @@ async def entry(message, word: str = "term", definition: str ="your entry"):
 
     #add word
     #need to check if word already exists in server
-    c.execute("INSERT INTO cwiki_schema.words (serverid, wordname) VALUES (%s, %s)", (server, word))
-    conn.commit()
+
+    c.execute("SELECT wordid FROM words WHERE wordname=%s AND serverid=%s", (word,server,))
+    temp = c.fetchone()
+    if not temp:
+        c.execute("INSERT INTO cwiki_schema.words (serverid, wordname) VALUES (%s, %s)", (server, word))
+        conn.commit()
+
 
     #add user
     sender=str(message.author.id)
@@ -103,7 +108,7 @@ async def entry(message, word: str = "term", definition: str ="your entry"):
     temp=c.fetchone()
     userid= int(temp[0])
     print(userid)
-    c.execute("SELECT wordid FROM cwiki_schema.words WHERE wordname=%s", (word,))
+    c.execute("SELECT wordid FROM cwiki_schema.words WHERE wordname=%s AND serverid=%s", (word, server))
     temp=c.fetchone()
     wordid=int(temp[0])
     print(wordid)
@@ -135,6 +140,7 @@ class DefView(discord.ui.View):
         if temp:
             wordid = int(temp[self.current])
             c.execute("SELECT definitionid FROM definitions WHERE wordid=%s", (wordid,))
+            temp = c.fetchall()
             if temp:
                 self.max = len(temp)
             else:
