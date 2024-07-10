@@ -147,9 +147,6 @@ class DefView(discord.ui.View):
                     userid = int(temp[0])
                     print(f"userid: {userid}")
                     c.execute("SELECT definitionid FROM definitions WHERE wordid=%s AND userid=%s", (wordid, userid))
-                else: 
-                    await message.send("no user found")
-            
             else:
                 print("no user inputted")
                 wordid = int(temp[0])
@@ -164,8 +161,10 @@ class DefView(discord.ui.View):
         else:
             print("[in send] wasn't able to get words")
         print(self.max)
+
         self.message = await message.send(view = self)
         await self.update_page()
+        
         
     
     def create_page(self):
@@ -242,9 +241,27 @@ class DefView(discord.ui.View):
 
 @bot.hybrid_command(name="define", description="get a term's deininition")
 async def define(message, word: str = "term", member:discord.Member = None):
-    definition_view = DefView(timeout=None)
-    word = word.upper()
-    await definition_view.send(message, word, member)
+    run: bool = True
+    c.execute("SELECT wordid FROM words WHERE wordname=%s AND serverid=%s", (word, str(message.guild.id),))
+    temp = c.fetchone()
+    if temp:
+        if member != None:
+            print("HELLO THANK YOU FOR INPUTTING A USER")
+            wordid = int(temp[0])
+            c.execute("SELECT userid FROM accounts WHERE discordid=%s", (member.id,))
+            temp = c.fetchone()
+            if temp:
+                userid = int(temp[0])
+                print(f"userid: {userid}")
+                c.execute("SELECT definitionid FROM definitions WHERE wordid=%s AND userid=%s", (wordid, userid))
+            else: 
+                await message.send("No user has defined that word.")
+                run = False
+    if run:
+        definition_view = DefView(timeout=None)
+        word = word.upper()
+        await definition_view.send(message, word, member)
+    
                 
 
 
