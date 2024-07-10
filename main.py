@@ -127,6 +127,7 @@ class DefView(discord.ui.View):
     word: str = "term"
     member: discord.Member = None
     server: str = ""
+    current_definition: str = ""
 
 
     async def send(self, message, word: str = "term", member: discord.Member = None):
@@ -195,12 +196,12 @@ class DefView(discord.ui.View):
             temp = c.fetchall()
 
             if temp:
-                definitionid=int(temp[self.current][0])
-                c.execute("SELECT date FROM definitions WHERE definitionid=%s", (definitionid,))
+                self.current_definition=int(temp[self.current][0])
+                c.execute("SELECT date FROM definitions WHERE definitionid=%s", (self.current_definition,))
                 temp1 = c.fetchone()
                 date = str(temp1[0])
                 embed = discord.Embed(title=self.word, description=date, color=discord.Color.random())
-                c.execute("SELECT userid FROM definitions WHERE definitionid=%s", (definitionid,))
+                c.execute("SELECT userid FROM definitions WHERE definitionid=%s", (self.current_definition,))
                 temp1 = c.fetchone()
                 userid = int(temp1[0])
                 c.execute("SELECT discordid FROM accounts WHERE userid=%s", (userid,))
@@ -208,10 +209,13 @@ class DefView(discord.ui.View):
                 discordid = int(temp1[0])
                 member = self.message.guild.get_member(discordid)
                 embed.set_author(name=member.display_name, icon_url=member.display_avatar)
-                c.execute("SELECT definition FROM definitions WHERE definitionid=%s", (definitionid,))
+                c.execute("SELECT definition FROM definitions WHERE definitionid=%s", (self.current_definition,))
                 temp1 = c.fetchone()
                 definition = str(temp1[0])
-                embed.add_field(name="Entry", value=definition)
+                c.execute("SELECT points FROM definitions WHERE definitionid=%s", (self.current_definition,))
+                temp1 = c.fetchone()
+                points = int(temp1[0])
+                embed.add_field(name=f"Entry - {points} Wooks", value=definition)
                 embed.set_footer(text=f"{self.current+1} out of {len(temp)} definitions")
                 return embed
             else:
@@ -223,7 +227,7 @@ class DefView(discord.ui.View):
         await self.message.edit(embed = self.create_page(), view = self)
 
 
-    @discord.ui.button(label="<", style=discord.ButtonStyle.blurple)
+    @discord.ui.button(label="⬅️", style=discord.ButtonStyle.blurple)
     async def back_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         await interaction.response.defer()
         self.current -= 1
@@ -231,12 +235,23 @@ class DefView(discord.ui.View):
             self.current = self.max - 1
         await self.update_page()
 
-    @discord.ui.button(label=">", style=discord.ButtonStyle.blurple)
+    @discord.ui.button(label="➡️", style=discord.ButtonStyle.blurple)
     async def next_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         await interaction.response.defer()
         self.current += 1
         if self.current >= self.max:
             self.current = 0
+        await self.update_page()
+
+    @discord.ui.button(label="📈", style=discord.ButtonStyle.blurple)
+    async def wook_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.response.defer()
+
+        c.execute("SELECT points FROM definitions WHERE definitionid=%s", (self.current_definition,))
+        temp1 = c.fetchone()
+        points = int(temp1[0])
+        c.execute("UPDATE definitions SET points = %s WHERE definitionid=%s", (points+1, self.current_definition))
+        conn.commit()
         await self.update_page()
 
 @bot.hybrid_command(name="define", description="get a term's deininition")
@@ -257,6 +272,9 @@ async def define(message, word: str = "term", member:discord.Member = None):
             else: 
                 await message.send("No user has defined that word.")
                 run = False
+    else:
+        await message.send("That word has not been defined.")
+        run = False
     if run:
         definition_view = DefView(timeout=None)
         word = word.upper()
