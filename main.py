@@ -138,17 +138,34 @@ class DefView(discord.ui.View):
         c.execute("SELECT wordid FROM words WHERE wordname=%s AND serverid=%s", (self.word,self.server,))
         temp = c.fetchone()
         if temp:
-            wordid = int(temp[self.current])
-            c.execute("SELECT definitionid FROM definitions WHERE wordid=%s", (wordid,))
+            if self.member != None:
+                print("HELLO THANK YOU FOR INPUTTING A USER")
+                wordid = int(temp[0])
+                c.execute("SELECT userid FROM accounts WHERE discordid=%s", (self.member.id,))
+                temp = c.fetchone()
+                if temp:
+                    userid = int(temp[0])
+                    print(f"userid: {userid}")
+                    c.execute("SELECT definitionid FROM definitions WHERE wordid=%s AND userid=%s", (wordid, userid))
+                else: 
+                    await message.send("no user found")
+            
+            else:
+                print("no user inputted")
+                wordid = int(temp[0])
+                c.execute("SELECT definitionid FROM definitions WHERE wordid=%s", (wordid,))
+    
             temp = c.fetchall()
             if temp:
                 self.max = len(temp)
+                print(self.max)
             else:
                 print("[in send] wasn't able to fetch list of definitions")
         else:
             print("[in send] wasn't able to get words")
         print(self.max)
         self.message = await message.send(view = self)
+        await self.update_page()
         
     
     def create_page(self):
@@ -159,8 +176,25 @@ class DefView(discord.ui.View):
             print(self.current)
             wordid = int(temp[0])
             print(wordid)
-            c.execute("SELECT definitionid FROM definitions WHERE wordid=%s", (wordid,))
+            if self.member != None:
+                print("HELLO THANK YOU FOR INPUTTING A USER")
+                wordid = int(temp[0])
+                c.execute("SELECT userid FROM accounts WHERE discordid=%s", (self.member.id,))
+                temp = c.fetchone()
+                if temp:
+                    userid = int(temp[0])
+                    print(f"userid: {userid}")
+                    c.execute("SELECT definitionid FROM definitions WHERE wordid=%s AND userid=%s", (wordid, userid))
+                else: 
+                    print ("no user found")#add something here later
+
+            else:
+                print("no user inputted")
+                wordid = int(temp[0])
+                c.execute("SELECT definitionid FROM definitions WHERE wordid=%s", (wordid,))
+
             temp = c.fetchall()
+
             if temp:
                 definitionid=int(temp[self.current][0])
                 c.execute("SELECT date FROM definitions WHERE definitionid=%s", (definitionid,))
