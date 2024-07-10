@@ -178,7 +178,7 @@ class DefView(discord.ui.View):
                 c.execute("SELECT definition FROM definitions WHERE definitionid=%s", (definitionid,))
                 temp1 = c.fetchone()
                 definition = str(temp1[0])
-                embed.add_field(name="Definition", value=definition)
+                embed.add_field(name="Entry", value=definition)
                 embed.set_footer(text=f"{self.current+1} out of {len(temp)} definitions")
                 return embed
             else:
@@ -190,17 +190,21 @@ class DefView(discord.ui.View):
         await self.message.edit(embed = self.create_page(), view = self)
 
 
-    @discord.ui.button(label=":arrow_forward:", style=discord.ButtonStyle.blurple)
+    @discord.ui.button(label="<", style=discord.ButtonStyle.blurple)
+    async def back_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.response.defer()
+        self.current -= 1
+        if self.current < 0:
+            self.current = self.max - 1
+        await self.update_page()
+
+    @discord.ui.button(label=">", style=discord.ButtonStyle.blurple)
     async def next_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         await interaction.response.defer()
-        print(f"max {self.max}")
-        print(f"current {self.current}")
         self.current += 1
         if self.current >= self.max:
             self.current = 0
         await self.update_page()
-
-
 
 @bot.hybrid_command(name="define", description="get a term's deininition")
 async def define(message, word: str = "term", member:discord.Member = None):
