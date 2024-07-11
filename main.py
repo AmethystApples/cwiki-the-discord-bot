@@ -74,15 +74,6 @@ async def on_message(message):
             print("user not found")
         # await message.channel.send(user)
 
-@bot.hybrid_command(name="helpp", description="C-wiki tutorial")        
-async def helpmessage(message):
-    embed = discord.Embed(title="Help", description="C-wiki tutorial", color=discord.Color.random())
-    embed.add_field(name="entry",value="Add an entry to C-wiki",inline=True)
-    #embed.add_field(name="/define",value="See a list of definitions",inline=True)
-    #embed.add_field(name="📈 and 📉",value="Users can vote on entries by accessing their defintions and clicking the 📈 and 📉 buttons",inline=True)
-    await message.channel.send(embed=embed)
-
-
 @bot.hybrid_command(name="entry", description="define a term")        
 async def entry(message, word: str = "term", definition: str ="your entry"):
     await message.send("Entry added for "+word+" by "+message.author.name)
@@ -128,6 +119,15 @@ async def entry(message, word: str = "term", definition: str ="your entry"):
     c.execute("INSERT INTO cwiki_schema.definitions (wordid, definition, userid, date) VALUES (%s, %s, %s, %s)", (wordid, definition, userid, today))
     conn.commit()
 
+@bot.hybrid_command(name="helpp", description="C-wiki tutorial")        
+async def helpmessage(message):
+    print("hello")
+    embed = discord.Embed(title="Help", description="C-wiki tutorial", color=discord.Color.random())
+    embed.add_field(name="entry",value="Add an entry to C-wiki",inline=True)
+    #embed.add_field(name="/define",value="See a list of definitions",inline=True)
+    #embed.add_field(name="📈 and 📉",value="Users can vote on entries by accessing their defintions and clicking the 📈 and 📉 buttons",inline=True)
+    await message.channel.send(embed=embed)
+    await message.channel.send("work")
 
 class DefView(discord.ui.View):
     current: int = 0
