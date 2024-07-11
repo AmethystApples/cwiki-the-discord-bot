@@ -75,49 +75,52 @@ async def on_message(message):
         # await message.channel.send(user)
 
 @bot.hybrid_command(name="entry", description="define a term")        
-async def entry(message, word: str = "term", definition: str ="your entry"):
-    await message.send("Entry added for "+word+" by "+message.author.name)
-    server=str(message.guild.id)
+async def entry(message, word: str = "", definition: str ="your entry"):
+    if word=="":
+        await message.reply("Please input a word.")
+    else:
+        await message.send("Entry added for "+word+" by "+message.author.name)
+        server=str(message.guild.id)
 
-    #add word
-    #need to check if word already exists in server
+        #add word
+        #need to check if word already exists in server
 
-    c.execute("SELECT wordid FROM words WHERE wordname=%s AND serverid=%s", (word,server,))
-    temp = c.fetchone()
-    if not temp:
-        c.execute("INSERT INTO cwiki_schema.words (serverid, wordname) VALUES (%s, %s)", (server, word))
+        c.execute("SELECT wordid FROM words WHERE wordname=%s AND serverid=%s", (word,server,))
+        temp = c.fetchone()
+        if not temp:
+            c.execute("INSERT INTO cwiki_schema.words (serverid, wordname) VALUES (%s, %s)", (server, word))
+            conn.commit()
+
+
+        #add user
+        sender=str(message.author.id)
+        user=str(message.author.name)
+        c.execute("SELECT discordid FROM cwiki_schema.accounts WHERE EXISTS(SELECT * FROM cwiki_schema.accounts WHERE discordid=%s)", (sender,))
+        if c.fetchone():
+            c.execute("SELECT username FROM accounts WHERE discordid=%s", (sender,))
+            username=c.fetchone()
+            print("user found")
+        else: 
+            c.execute("INSERT INTO cwiki_schema.accounts (discordid, username) VALUES (%s, %s)", (sender, user))
+            conn.commit()
+            print("user not found")
+
+        #find user id and word id
+        c.execute("SELECT userid FROM cwiki_schema.accounts WHERE discordid=%s", (sender,))
+        temp=c.fetchone()
+        userid= int(temp[0])
+        print(userid)
+        c.execute("SELECT wordid FROM cwiki_schema.words WHERE wordname=%s AND serverid=%s", (word, server))
+        temp=c.fetchone()
+        wordid=int(temp[0])
+        print(wordid)
+
+        #add definition
+        today = date.today()
+        print(today)
+
+        c.execute("INSERT INTO cwiki_schema.definitions (wordid, definition, userid, date) VALUES (%s, %s, %s, %s)", (wordid, definition, userid, today))
         conn.commit()
-
-
-    #add user
-    sender=str(message.author.id)
-    user=str(message.author.name)
-    c.execute("SELECT discordid FROM cwiki_schema.accounts WHERE EXISTS(SELECT * FROM cwiki_schema.accounts WHERE discordid=%s)", (sender,))
-    if c.fetchone():
-        c.execute("SELECT username FROM accounts WHERE discordid=%s", (sender,))
-        username=c.fetchone()
-        print("user found")
-    else: 
-        c.execute("INSERT INTO cwiki_schema.accounts (discordid, username) VALUES (%s, %s)", (sender, user))
-        conn.commit()
-        print("user not found")
-
-    #find user id and word id
-    c.execute("SELECT userid FROM cwiki_schema.accounts WHERE discordid=%s", (sender,))
-    temp=c.fetchone()
-    userid= int(temp[0])
-    print(userid)
-    c.execute("SELECT wordid FROM cwiki_schema.words WHERE wordname=%s AND serverid=%s", (word, server))
-    temp=c.fetchone()
-    wordid=int(temp[0])
-    print(wordid)
-
-    #add definition
-    today = date.today()
-    print(today)
-
-    c.execute("INSERT INTO cwiki_schema.definitions (wordid, definition, userid, date) VALUES (%s, %s, %s, %s)", (wordid, definition, userid, today))
-    conn.commit()
 
 bot.remove_command("help")
 @bot.hybrid_command(name="help", description="C-wiki tutorial")        
@@ -306,26 +309,30 @@ class DefView(discord.ui.View):
         await self.update_page()
 
 @bot.hybrid_command(name="define", description="get a term's deininition")
-async def define(message, word: str = "term", member:discord.Member = None):
+async def define(message, word: str = "", member:discord.Member = None):
     run: bool = True
-    c.execute("SELECT wordid FROM words WHERE wordname=%s AND serverid=%s", (word, str(message.guild.id),))
-    temp = c.fetchone()
-    if temp:
-        if member != None:
-            print("HELLO THANK YOU FOR INPUTTING A USER")
-            wordid = int(temp[0])
-            c.execute("SELECT userid FROM accounts WHERE discordid=%s", (member.id,))
-            temp = c.fetchone()
-            if temp:
-                userid = int(temp[0])
-                print(f"userid: {userid}")
-                c.execute("SELECT definitionid FROM definitions WHERE wordid=%s AND userid=%s", (wordid, userid))
-            else: 
-                await message.send("No user has defined that word.")
-                run = False
+    if word=="":
+        await message.reply("Please input a word.")
+        run=False
     else:
-        await message.send("That word has not been defined.")
-        run = False
+        c.execute("SELECT wordid FROM words WHERE wordname=%s AND serverid=%s", (word, str(message.guild.id),))
+        temp = c.fetchone()
+        if temp:
+            if member != None:
+                print("HELLO THANK YOU FOR INPUTTING A USER")
+                wordid = int(temp[0])
+                c.execute("SELECT userid FROM accounts WHERE discordid=%s", (member.id,))
+                temp = c.fetchone()
+                if temp:
+                    userid = int(temp[0])
+                    print(f"userid: {userid}")
+                    c.execute("SELECT definitionid FROM definitions WHERE wordid=%s AND userid=%s", (wordid, userid))
+                else: 
+                    await message.send("No user has defined that word.")
+                    run = False
+        else:
+            await message.reply("That word has not been defined.")
+            run = False
     if run:
         definition_view = DefView(timeout=None)
         word = word.upper()
