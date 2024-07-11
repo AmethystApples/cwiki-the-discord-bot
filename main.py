@@ -76,7 +76,7 @@ async def on_message(message):
 
 @bot.hybrid_command(name="entry", description="define a term")        
 async def entry(message, word: str = "term", definition: str ="your entry"):
-    await message.send("Here is your word "+word+" and definitions "+definition)
+    await message.send("Entry added for "+word+" by "+message.author.name)
     server=str(message.guild.id)
 
     #add word
@@ -96,7 +96,6 @@ async def entry(message, word: str = "term", definition: str ="your entry"):
     if c.fetchone():
         c.execute("SELECT username FROM accounts WHERE discordid=%s", (sender,))
         username=c.fetchone()
-        await message.channel.send("Username: "+str(username[0]))
         print("user found")
     else: 
         c.execute("INSERT INTO cwiki_schema.accounts (discordid, username) VALUES (%s, %s)", (sender, user))
@@ -215,7 +214,7 @@ class DefView(discord.ui.View):
                 c.execute("SELECT points FROM definitions WHERE definitionid=%s", (self.current_definition,))
                 temp1 = c.fetchone()
                 points = int(temp1[0])
-                embed.add_field(name=f"Entry - {points} Wooks", value=definition)
+                embed.add_field(name=f"Entry: {points} Wooks", value=definition)
                 embed.set_footer(text=f"{self.current+1} out of {len(temp)} definitions")
                 return embed
             else:
@@ -246,11 +245,54 @@ class DefView(discord.ui.View):
     @discord.ui.button(label="📈", style=discord.ButtonStyle.blurple)
     async def wook_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         await interaction.response.defer()
-
         c.execute("SELECT points FROM definitions WHERE definitionid=%s", (self.current_definition,))
         temp1 = c.fetchone()
         points = int(temp1[0])
-        c.execute("UPDATE definitions SET points = %s WHERE definitionid=%s", (points+1, self.current_definition))
+
+        c.execute("SELECT wook from wooks WHERE definitionid=%s AND discordid=%s", (self.current_definition,interaction.user.id,))
+        temp = c.fetchone()
+        if temp:
+            if int(temp[0]) == -1:
+                points += 2
+                c.execute("UPDATE wooks SET wook = %s WHERE definitionid = %s AND discordid=%s", (1, self.current_definition,interaction.user.id,))
+                conn.commit()
+            if int(temp[0]) == 1:
+                points -= 1
+                c.execute("DELETE FROM wooks WHERE definitionid=%s AND discordid=%s", (self.current_definition,interaction.user.id,))
+                conn.commit()
+        else:
+            points += 1
+            c.execute("INSERT INTO wooks (definitionid, discordid, wook) VALUES (%s, %s, %s)", (self.current_definition, interaction.user.id, 1))
+            conn.commit()
+
+        c.execute("UPDATE definitions SET points = %s WHERE definitionid=%s", (points, self.current_definition))
+        conn.commit()
+        await self.update_page()
+
+    @discord.ui.button(label="📉", style=discord.ButtonStyle.blurple)
+    async def book_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.response.defer()
+        c.execute("SELECT points FROM definitions WHERE definitionid=%s", (self.current_definition,))
+        temp1 = c.fetchone()
+        points = int(temp1[0])
+
+        c.execute("SELECT wook from wooks WHERE definitionid=%s AND discordid=%s", (self.current_definition,interaction.user.id,))
+        temp = c.fetchone()
+        if temp:
+            if int(temp[0]) == 1:
+                points -= 2
+                c.execute("UPDATE wooks SET wook = %s WHERE definitionid = %s AND discordid=%s", (-1, self.current_definition,interaction.user.id,))
+                conn.commit()
+            if int(temp[0]) == -1:
+                points += 1
+                c.execute("DELETE FROM wooks WHERE definitionid=%s AND discordid=%s", (self.current_definition,interaction.user.id,))
+                conn.commit()
+        else:
+            points -= 1
+            c.execute("INSERT INTO wooks (definitionid, discordid, wook) VALUES (%s, %s, %s)", (self.current_definition, interaction.user.id, -1))
+            conn.commit()
+
+        c.execute("UPDATE definitions SET points = %s WHERE definitionid=%s", (points, self.current_definition))
         conn.commit()
         await self.update_page()
 
