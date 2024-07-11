@@ -123,11 +123,10 @@ async def entry(message, word: str = "term", definition: str ="your entry"):
 async def helpmessage(message):
     print("hello")
     embed = discord.Embed(title="Help", description="C-wiki tutorial", color=discord.Color.random())
-    embed.add_field(name="entry",value="Add an entry to C-wiki",inline=True)
-    #embed.add_field(name="/define",value="See a list of definitions",inline=True)
-    #embed.add_field(name="📈 and 📉",value="Users can vote on entries by accessing their defintions and clicking the 📈 and 📉 buttons",inline=True)
-    await message.channel.send(embed=embed)
-    await message.channel.send("work")
+    embed.add_field(name="/entry",value="Add an entry to C-wiki",inline=True)
+    embed.add_field(name="/define",value="See a list of definitions",inline=True)
+    embed.add_field(name="Wooks: 📈 and 📉",value="Users can vote on entries by accessing their defintions and clicking the 📈 and 📉 buttons to add or subtract 'wooks'.",inline=True)
+    await message.reply(embed=embed)
 
 class DefView(discord.ui.View):
     current: int = 0
