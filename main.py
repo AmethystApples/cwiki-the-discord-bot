@@ -74,6 +74,15 @@ async def on_message(message):
             print("user not found")
         # await message.channel.send(user)
 
+@bot.hybrid_command(name="helpp", description="C-wiki tutorial")        
+async def helpmessage(message):
+    embed = discord.Embed(title="Help", description="C-wiki tutorial", color=discord.Color.random())
+    embed.add_field(name="entry",value="Add an entry to C-wiki",inline=True)
+    #embed.add_field(name="/define",value="See a list of definitions",inline=True)
+    #embed.add_field(name="📈 and 📉",value="Users can vote on entries by accessing their defintions and clicking the 📈 and 📉 buttons",inline=True)
+    await message.channel.send(embed=embed)
+
+
 @bot.hybrid_command(name="entry", description="define a term")        
 async def entry(message, word: str = "term", definition: str ="your entry"):
     await message.send("Entry added for "+word+" by "+message.author.name)
