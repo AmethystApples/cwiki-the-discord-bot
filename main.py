@@ -139,12 +139,14 @@ class DefView(discord.ui.View):
     member: discord.Member = None
     server: str = ""
     current_definition: str = ""
+    best: bool = False
 
 
-    async def send(self, message, word: str = "term", member: discord.Member = None):
+    async def send(self, message, word: str = "term", member: discord.Member = None, best: bool = False):
         self.word = word
         self.member = member
         self.server = str(message.guild.id)
+        self.best = best
         print(self.word)
         print(self.server)
         c.execute("SELECT wordid FROM words WHERE wordname=%s AND serverid=%s", (self.word,self.server,))
@@ -195,14 +197,21 @@ class DefView(discord.ui.View):
                 if temp:
                     userid = int(temp[0])
                     print(f"userid: {userid}")
-                    c.execute("SELECT definitionid FROM definitions WHERE wordid=%s AND userid=%s", (wordid, userid))
+                    if self.best:
+                        c.execute("SELECT definitionid FROM definitions WHERE wordid=%s AND userid=%s ORDER BY points DESC", (wordid, userid))
+                    else:
+                        c.execute("SELECT definitionid FROM definitions WHERE wordid=%s AND userid=%s", (wordid, userid))
+
                 else: 
                     print ("no user found")#add something here later
 
             else:
                 print("no user inputted")
                 wordid = int(temp[0])
-                c.execute("SELECT definitionid FROM definitions WHERE wordid=%s", (wordid,))
+                if self.best:
+                    c.execute("SELECT definitionid FROM definitions WHERE wordid=%s ORDER BY points DESC", (wordid,))
+                else:
+                    c.execute("SELECT definitionid FROM definitions WHERE wordid=%s", (wordid,))
 
             temp = c.fetchall()
 
@@ -309,7 +318,7 @@ class DefView(discord.ui.View):
         await self.update_page()
 
 @bot.hybrid_command(name="define", description="get a term's deininition")
-async def define(message, word: str = "", member:discord.Member = None):
+async def define(message, word: str = "", member:discord.Member = None, best: bool = False):
     run: bool = True
     if word=="":
         await message.reply("Please input a word.")
@@ -336,7 +345,7 @@ async def define(message, word: str = "", member:discord.Member = None):
     if run:
         definition_view = DefView(timeout=None)
         word = word.upper()
-        await definition_view.send(message, word, member)
+        await definition_view.send(message, word, member, best)
     
                 
 
