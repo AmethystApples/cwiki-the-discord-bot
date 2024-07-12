@@ -182,6 +182,9 @@ class DefView(discord.ui.View):
         
     
     def create_page(self):
+        colors = [discord.Colour.green(), discord.Colour.yellow(), discord.Colour.orange(), discord.Colour.red(), discord.Colour.purple()]
+        thresholds = [5, 15, 30, 50, 100]
+        
         c.execute("SELECT wordid FROM words WHERE wordname=%s AND serverid=%s", (self.word,self.server,))
     
         temp = c.fetchone()
@@ -220,7 +223,17 @@ class DefView(discord.ui.View):
                 c.execute("SELECT date FROM definitions WHERE definitionid=%s", (self.current_definition,))
                 temp1 = c.fetchone()
                 date = str(temp1[0])
-                embed = discord.Embed(title=self.word, description=date, color=discord.Color.random())
+                c.execute("SELECT points FROM definitions WHERE definitionid=%s", (self.current_definition,))
+                temp1 = c.fetchone()
+                points = int(temp1[0])
+                embed_color = discord.Color.blurple()
+                i = 4
+                while i > -1:
+                    if points >= thresholds[i]:
+                        embed_color = colors[i]
+                        i = 0
+                    i -= 1
+                embed = discord.Embed(title=self.word, description=date, color=embed_color)
                 c.execute("SELECT userid FROM definitions WHERE definitionid=%s", (self.current_definition,))
                 temp1 = c.fetchone()
                 userid = int(temp1[0])
@@ -232,9 +245,7 @@ class DefView(discord.ui.View):
                 c.execute("SELECT definition FROM definitions WHERE definitionid=%s", (self.current_definition,))
                 temp1 = c.fetchone()
                 definition = str(temp1[0])
-                c.execute("SELECT points FROM definitions WHERE definitionid=%s", (self.current_definition,))
-                temp1 = c.fetchone()
-                points = int(temp1[0])
+
                 embed.add_field(name=f"Entry: {points} Wooks", value=definition)
                 embed.set_footer(text=f"{self.current+1} out of {len(temp)} definitions")
                 return embed
