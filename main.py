@@ -357,11 +357,5 @@ async def define(message, word: str = "", member:discord.Member = None, best: bo
         definition_view = DefView(timeout=None)
         word = word.upper()
         await definition_view.send(message, word, member, best)
-    
-                
 
-
-        
-
-# EXECUTES THE BOT WITH THE SPECIFIED TOKEN. TOKEN HAS BEEN REMOVED AND USED JUST AS AN EXAMPLE.
-bot.run("MTI1Mjk4MTE2NjE4MTcxMTg3NA.GplJmK.CAPGvqFNy1OlfgSMtWznlTsd_HOov-VWRJVlyI")
+bot.run(DISCORD_TOKEN)
