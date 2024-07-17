@@ -3,6 +3,13 @@ import mysql.connector
 from dotenv import load_dotenv
 from datetime import date
 
+from transformers import BartTokenizer, BartForConditionalGeneration
+
+
+tokenizer = BartTokenizer.from_pretrained('facebook/bart-large-cnn')
+model = BartForConditionalGeneration.from_pretrained('facebook/bart-large-cnn')
+
+
 load_dotenv()
 # Grab the API token from the .env file.
 DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
@@ -121,6 +128,45 @@ async def helpmessage(message):
     embed.add_field(name="/define",value="See a list of definitions by entering the **word** you wish to see definitions of. You can also filter definitions by specifying the **member** who created them, or sort by the **best** wooked posts. \n\nFor example: /define word:term member:@Cwiki best:True",inline=True)
     embed.add_field(name="Wooks: 📈 and 📉",value="Users can vote on entries by accessing their defintions and clicking the 📈 and 📉 buttons to add or subtract 'wooks'.",inline=True)
     await message.reply(embed=embed)
+
+
+def generate_summary(text):
+    inputs = tokenizer.encode("summarize: " + text, return_tensors="pt", max_length=1024, truncation=True)
+    summary_ids = model.generate(inputs, max_length=150, min_length=50, length_penalty=2.0, num_beams=4, early_stopping=True)
+    summary = tokenizer.decode(summary_ids[0], skip_special_tokens=True)
+    return summary
+
+
+@bot.hybrid_command(name="summarize", description="Summarize existing definitions")
+async def summarize(message, word: str=""):
+    if word=="":
+        await message.reply("Please input a word.")
+        run=False
+    else:
+        c.execute("SELECT wordid FROM words WHERE wordname=%s AND serverid=%s", (word, str(message.guild.id),))
+        temp = c.fetchone()
+        if temp:
+            wordid = int(temp[0])
+            c.execute("SELECT definitionid FROM definitions WHERE wordid=%s ORDER BY points DESC", (wordid,))
+            #check how many defs
+            temp = c.fetchall()
+            if temp:
+                if len(temp):
+                    definitions= ""
+                    for i in range(2):
+                        definitions= definitions+"\n"+temp[i]
+                    summary = generate_summary(definitions)
+
+                    embed = discord.Embed(title="Help", description="C-wiki tutorial", color=discord.Color.blue())
+                    embed.add_field(name="Summary",value=summary,inline=True)
+                else:
+                    await message.reply("This word does not have enough definitions.")
+
+        else:
+            await message.reply("That word has not been defined.")
+            run = False 
+
+    
 
 @bot.hybrid_command(name="define", description="get a term's deininition")
 async def define(message, word: str = "", member:discord.Member = None, best: bool = False):
