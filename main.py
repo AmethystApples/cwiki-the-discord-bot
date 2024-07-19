@@ -1,44 +1,31 @@
 import os
 import mysql.connector
+import defview
 from dotenv import load_dotenv
 from datetime import date
-
+load_dotenv()
 from transformers import BartTokenizer, BartForConditionalGeneration
 
 
 tokenizer = BartTokenizer.from_pretrained('facebook/bart-large-cnn')
 model = BartForConditionalGeneration.from_pretrained('facebook/bart-large-cnn')
 
-
-load_dotenv()
 # Grab the API token from the .env file.
 DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
-
 import discord
 from discord.ext import commands 
 from discord import app_commands
-
-import defview
-
 intents=discord.Intents.all()
 intents.message_content = True
 intents.messages = True
 intents.members = True
-
-
 bot = commands.Bot(command_prefix='/', intents = intents)
-
-
-
 STARTUP_CHANNEL_ID = 1252983015169196177
-
 conn = mysql.connector.connect(host="localhost",user="root", password="8o0k3d@ndW0ok3d",database="cwiki_schema")
-
 c=conn.cursor(buffered=True)
-
+@bot.event
 async def on_ready():
     guild_count=0
-
     for guild in bot.guilds:
         # PRINT THE SERVER'S ID AND NAME.
         print(f"- {guild.id} (name: {guild.name})")
@@ -50,7 +37,6 @@ async def on_ready():
     #channel = bot.get_channel(STARTUP_CHANNEL_ID)
     #if channel:
     #   await channel.send("SampleDiscordBot has started and is now online!")
-
 @bot.event
 async def on_message(message):
 	# CHECKS IF THE MESSAGE THAT WAS SENT IS EQUAL TO "HELLO".
@@ -70,25 +56,20 @@ async def on_message(message):
             conn.commit()
             print("user not found")
         # await message.channel.send(user)
-
-@bot.hybrid_command(name="entry", description="define a term")        
+@bot.hybrid_command(name="entry", description="Create an entry for a term or word.")        
 async def entry(message, word: str = "", definition: str ="your entry"):
     if word=="":
         await message.reply("Please input a word.")
     else:
         await message.send("Entry added for "+word+" by "+message.author.name)
         server=str(message.guild.id)
-
         #add word
         #need to check if word already exists in server
-
         c.execute("SELECT wordid FROM words WHERE wordname=%s AND serverid=%s", (word,server,))
         temp = c.fetchone()
         if not temp:
             c.execute("INSERT INTO cwiki_schema.words (serverid, wordname) VALUES (%s, %s)", (server, word))
             conn.commit()
-
-
         #add user
         sender=str(message.author.id)
         user=str(message.author.name)
@@ -101,7 +82,6 @@ async def entry(message, word: str = "", definition: str ="your entry"):
             c.execute("INSERT INTO cwiki_schema.accounts (discordid, username) VALUES (%s, %s)", (sender, user))
             conn.commit()
             print("user not found")
-
         #find user id and word id
         c.execute("SELECT userid FROM cwiki_schema.accounts WHERE discordid=%s", (sender,))
         temp=c.fetchone()
@@ -111,11 +91,9 @@ async def entry(message, word: str = "", definition: str ="your entry"):
         temp=c.fetchone()
         wordid=int(temp[0])
         print(wordid)
-
         #add definition
         today = date.today()
         print(today)
-
         c.execute("INSERT INTO cwiki_schema.definitions (wordid, definition, userid, date) VALUES (%s, %s, %s, %s)", (wordid, definition, userid, today))
         conn.commit()
 
@@ -123,22 +101,201 @@ bot.remove_command("help")
 @bot.hybrid_command(name="help", description="C-wiki tutorial")        
 async def helpmessage(message):
     print("hello")
+    embed = discord.Embed(title="Help", description="C-wiki tutorial", color=discord.Color.random())
     embed = discord.Embed(title="Help", description="C-wiki tutorial", color=discord.Color.blue())
     embed.add_field(name="/entry",value="Add an entry to C-wiki by entering the **word** you want to define, as well as its **definition**. \n\nFor example: /entry word:term definition:example",inline=True)
-    embed.add_field(name="/define",value="See a list of definitions by entering the **word** you wish to see definitions of. You can also filter definitions by specifying the **member** who created them, or sort by the **best** wooked posts. \n\nFor example: /define word:term member:@Cwiki best:True",inline=True)
+    embed.add_field(name="/define",value="See a list of definitions by entering the **word** you wish to see definitions of. You can also filter definitions by specifying the **member** who created them. \n\nFor example: /define word:term member:@Cwiki",inline=True)
     embed.add_field(name="Wooks: 📈 and 📉",value="Users can vote on entries by accessing their defintions and clicking the 📈 and 📉 buttons to add or subtract 'wooks'.",inline=True)
     await message.reply(embed=embed)
 
+class DefView(discord.ui.View):
+    current: int = 0
+    max: int = 1
+    word: str = "term"
+    member: discord.Member = None
+    server: str = ""
+    current_definition: str = ""
+    best: bool = False
+    async def send(self, message, word: str = "term", member: discord.Member = None, best: bool = False):
+        self.word = word
+        self.member = member
+        self.server = str(message.guild.id)
+        self.best = best
+        print(self.word)
+        print(self.server)
+        c.execute("SELECT wordid FROM words WHERE wordname=%s AND serverid=%s", (self.word,self.server,))
+        temp = c.fetchone()
+        if temp:
+            if self.member != None:
+                print("HELLO THANK YOU FOR INPUTTING A USER")
+                wordid = int(temp[0])
+                c.execute("SELECT userid FROM accounts WHERE discordid=%s", (self.member.id,))
+                temp = c.fetchone()
+                if temp:
+                    userid = int(temp[0])
+                    print(f"userid: {userid}")
+                    c.execute("SELECT definitionid FROM definitions WHERE wordid=%s AND userid=%s", (wordid, userid))
+            else:
+                print("no user inputted")
+                wordid = int(temp[0])
+                c.execute("SELECT definitionid FROM definitions WHERE wordid=%s", (wordid,))
+    
+            temp = c.fetchall()
+            if temp:
+                self.max = len(temp)
+                print(self.max)
+            else:
+                print("[in send] wasn't able to fetch list of definitions")
+        else:
+            print("[in send] wasn't able to get words")
+        print(self.max)
+        self.message = await message.send(view = self)
+        await self.update_page()
+        
+        
+    
+    def create_page(self):
+        colors = [discord.Colour.green(), discord.Colour.yellow(), discord.Colour.orange(), discord.Colour.red(), discord.Colour.purple()]
+        thresholds = [5, 15, 30, 50, 100]
+        
+        c.execute("SELECT wordid FROM words WHERE wordname=%s AND serverid=%s", (self.word,self.server,))
+    
+        temp = c.fetchone()
+        if temp:
+            print(self.current)
+            wordid = int(temp[0])
+            print(wordid)
+            if self.member != None:
+                print("HELLO THANK YOU FOR INPUTTING A USER")
+                wordid = int(temp[0])
+                c.execute("SELECT userid FROM accounts WHERE discordid=%s", (self.member.id,))
+                temp = c.fetchone()
+                if temp:
+                    userid = int(temp[0])
+                    print(f"userid: {userid}")
+                    if self.best:
+                        c.execute("SELECT definitionid FROM definitions WHERE wordid=%s AND userid=%s ORDER BY points DESC", (wordid, userid))
+                    else:
+                        c.execute("SELECT definitionid FROM definitions WHERE wordid=%s AND userid=%s", (wordid, userid))
+                else: 
+                    print ("no user found")#add something here later
+            else:
+                print("no user inputted")
+                wordid = int(temp[0])
+                if self.best:
+                    c.execute("SELECT definitionid FROM definitions WHERE wordid=%s ORDER BY points DESC", (wordid,))
+                else:
+                    c.execute("SELECT definitionid FROM definitions WHERE wordid=%s", (wordid,))
+            temp = c.fetchall()
+            if temp:
+                self.current_definition=int(temp[self.current][0])
+                c.execute("SELECT date FROM definitions WHERE definitionid=%s", (self.current_definition,))
+                temp1 = c.fetchone()
+                date = str(temp1[0])
+                c.execute("SELECT points FROM definitions WHERE definitionid=%s", (self.current_definition,))
+                temp1 = c.fetchone()
+                points = int(temp1[0])
+                embed_color = discord.Color.blurple()
+                i = 4
+                while i > -1:
+                    if points >= thresholds[i]:
+                        embed_color = colors[i]
+                        i = 0
+                    i -= 1
+                embed = discord.Embed(title=self.word, description=date, color=embed_color)
+                c.execute("SELECT userid FROM definitions WHERE definitionid=%s", (self.current_definition,))
+                temp1 = c.fetchone()
+                userid = int(temp1[0])
+                c.execute("SELECT discordid FROM accounts WHERE userid=%s", (userid,))
+                temp1 = c.fetchone()
+                discordid = int(temp1[0])
+                member = self.message.guild.get_member(discordid)
+                embed.set_author(name=member.display_name, icon_url=member.display_avatar)
+                c.execute("SELECT definition FROM definitions WHERE definitionid=%s", (self.current_definition,))
+                temp1 = c.fetchone()
+                definition = str(temp1[0])
+                embed.add_field(name=f"Entry: {points} Wooks", value=definition)
+                embed.set_footer(text=f"{self.current+1} out of {len(temp)} definitions")
+                return embed
+            else:
+                print("[in create] wasn't able to fetch list of definitions")
+        else:
+            print("[in create] wasn't able to get words")
+    async def update_page(self):
+        await self.message.edit(embed = self.create_page(), view = self)
+    @discord.ui.button(label="⬅️", style=discord.ButtonStyle.blurple)
+    async def back_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.response.defer()
+        self.current -= 1
+        if self.current < 0:
+            self.current = self.max - 1
+        await self.update_page()
+    @discord.ui.button(label="➡️", style=discord.ButtonStyle.blurple)
+    async def next_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.response.defer()
+        self.current += 1
+        if self.current >= self.max:
+            self.current = 0
+        await self.update_page()
+    @discord.ui.button(label="📈", style=discord.ButtonStyle.blurple)
+    async def wook_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.response.defer()
+        c.execute("SELECT points FROM definitions WHERE definitionid=%s", (self.current_definition,))
+        temp1 = c.fetchone()
+        points = int(temp1[0])
+        c.execute("SELECT wook from wooks WHERE definitionid=%s AND discordid=%s", (self.current_definition,interaction.user.id,))
+        temp = c.fetchone()
+        if temp:
+            if int(temp[0]) == -1:
+                points += 2
+                c.execute("UPDATE wooks SET wook = %s WHERE definitionid = %s AND discordid=%s", (1, self.current_definition,interaction.user.id,))
+                conn.commit()
+            if int(temp[0]) == 1:
+                points -= 1
+                c.execute("DELETE FROM wooks WHERE definitionid=%s AND discordid=%s", (self.current_definition,interaction.user.id,))
+                conn.commit()
+        else:
+            points += 1
+            c.execute("INSERT INTO wooks (definitionid, discordid, wook) VALUES (%s, %s, %s)", (self.current_definition, interaction.user.id, 1))
+            conn.commit()
+        c.execute("UPDATE definitions SET points = %s WHERE definitionid=%s", (points, self.current_definition))
+        conn.commit()
+        await self.update_page()
+    @discord.ui.button(label="📉", style=discord.ButtonStyle.blurple)
+    async def book_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.response.defer()
+        c.execute("SELECT points FROM definitions WHERE definitionid=%s", (self.current_definition,))
+        temp1 = c.fetchone()
+        points = int(temp1[0])
+        c.execute("SELECT wook from wooks WHERE definitionid=%s AND discordid=%s", (self.current_definition,interaction.user.id,))
+        temp = c.fetchone()
+        if temp:
+            if int(temp[0]) == 1:
+                points -= 2
+                c.execute("UPDATE wooks SET wook = %s WHERE definitionid = %s AND discordid=%s", (-1, self.current_definition,interaction.user.id,))
+                conn.commit()
+            if int(temp[0]) == -1:
+                points += 1
+                c.execute("DELETE FROM wooks WHERE definitionid=%s AND discordid=%s", (self.current_definition,interaction.user.id,))
+                conn.commit()
+        else:
+            points -= 1
+            c.execute("INSERT INTO wooks (definitionid, discordid, wook) VALUES (%s, %s, %s)", (self.current_definition, interaction.user.id, -1))
+            conn.commit()
+        c.execute("UPDATE definitions SET points = %s WHERE definitionid=%s", (points, self.current_definition))
+        conn.commit()
+        await self.update_page()
 
 def generate_summary(text):
-    inputs = tokenizer.encode("summarize: " + text, return_tensors="pt", max_length=1024, truncation=True)
+    inputs = tokenizer.encode(text, return_tensors="pt", max_length=1024, truncation=True)
     summary_ids = model.generate(inputs, max_length=150, min_length=50, length_penalty=2.0, num_beams=4, early_stopping=True)
     summary = tokenizer.decode(summary_ids[0], skip_special_tokens=True)
     return summary
 
 
-@bot.hybrid_command(name="summarize", description="Summarize existing definitions")
+@bot.hybrid_command(name="summarize", description="Summarize existing definitions with AI.")
 async def summarize(message, word: str=""):
+    await message.defer()
     if word=="":
         await message.reply("Please input a word.")
         run=False
@@ -147,18 +304,18 @@ async def summarize(message, word: str=""):
         temp = c.fetchone()
         if temp:
             wordid = int(temp[0])
-            c.execute("SELECT definitionid FROM definitions WHERE wordid=%s ORDER BY points DESC", (wordid,))
+            c.execute("SELECT definition FROM definitions WHERE wordid=%s ORDER BY points DESC", (wordid,))
             #check how many defs
             temp = c.fetchall()
             if temp:
-                if len(temp):
+                if len(temp) > 2:
                     definitions= ""
                     for i in range(2):
-                        definitions= definitions+"\n"+temp[i]
+                        definitions= definitions+"\n"+temp[i][0]
                     summary = generate_summary(definitions)
-
-                    embed = discord.Embed(title="Help", description="C-wiki tutorial", color=discord.Color.blue())
+                    embed = discord.Embed(title=word, description="This summary has been generated by AI using the top 3 definitions for this word.", color=discord.Color.blue())
                     embed.add_field(name="Summary",value=summary,inline=True)
+                    await message.reply(embed=embed)
                 else:
                     await message.reply("This word does not have enough definitions.")
 
@@ -166,9 +323,8 @@ async def summarize(message, word: str=""):
             await message.reply("That word has not been defined.")
             run = False 
 
-    
 
-@bot.hybrid_command(name="define", description="get a term's deininition")
+@bot.hybrid_command(name="define", description="Retrieve a collection of definitions for a term if it has been defined in this server.")
 async def define(message, word: str = "", member:discord.Member = None, best: bool = False):
     run: bool = True
     if word=="":
@@ -194,7 +350,7 @@ async def define(message, word: str = "", member:discord.Member = None, best: bo
             await message.reply("That word has not been defined.")
             run = False
     if run:
-        definition_view = defview.DefView(timeout=None)
+        definition_view = DefView(timeout=None)
         word = word.upper()
         await definition_view.send(message, word, member, best)
 
