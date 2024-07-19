@@ -1,6 +1,5 @@
 import os
 import mysql.connector
-import defview
 from dotenv import load_dotenv
 from datetime import date
 load_dotenv()
@@ -61,9 +60,9 @@ async def entry(message, word: str = "", definition: str ="your entry"):
     if word=="":
         await message.reply("Please input a word.")
     else:
-        await message.send("Entry added for "+word+" by "+message.author.name)
+        await message.reply("Entry added for "+word+" by "+message.author.name)
         server=str(message.guild.id)
-        #add word
+        #add word.
         #need to check if word already exists in server
         c.execute("SELECT wordid FROM words WHERE wordname=%s AND serverid=%s", (word,server,))
         temp = c.fetchone()
