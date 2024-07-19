@@ -56,9 +56,9 @@ async def on_message(message):
             print("user not found")
         # await message.channel.send(user)
 @bot.hybrid_command(name="entry", description="Create an entry for a term or word.")        
-async def entry(message, word: str = "", definition: str ="your entry"):
-    if word=="":
-        await message.reply("Please input a word.")
+async def entry(message, word: str = "", definition: str =""):
+    if word == "" or definition == "":
+        await message.reply("You have not entered a term and/or its entry.")
     else:
         await message.reply("Entry added for "+word+" by "+message.author.name)
         server=str(message.guild.id)
