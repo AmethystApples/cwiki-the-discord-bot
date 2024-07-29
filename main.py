@@ -1,4 +1,7 @@
 import os
+import discord
+from discord.ext import commands 
+from discord import app_commands
 import mysql.connector
 from dotenv import load_dotenv
 from datetime import date
@@ -11,50 +14,33 @@ model = BartForConditionalGeneration.from_pretrained('facebook/bart-large-cnn')
 
 # Grab the API token from the .env file.
 DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
-import discord
-from discord.ext import commands 
-from discord import app_commands
+
+# Set up bot functionality
 intents=discord.Intents.all()
 intents.message_content = True
 intents.messages = True
 intents.members = True
 bot = commands.Bot(command_prefix='/', intents = intents)
 STARTUP_CHANNEL_ID = 1252983015169196177
+
+# Used for modifying SQL tables
 conn = mysql.connector.connect(host="localhost",user="root", password="8o0k3d@ndW0ok3d",database="cwiki_schema")
 c=conn.cursor(buffered=True)
+
+# Function for bot startup
 @bot.event
 async def on_ready():
     guild_count=0
     for guild in bot.guilds:
-        # PRINT THE SERVER'S ID AND NAME.
+        # Prints server id and name
         print(f"- {guild.id} (name: {guild.name})")
-        # INCREMENTS THE GUILD COUNTER.
+        # Increments guild counter
         guild_count = guild_count + 1
         
     print("SampleDiscordBot is in " + str(guild_count) + " guilds.")
     await bot.tree.sync()
-    #channel = bot.get_channel(STARTUP_CHANNEL_ID)
-    #if channel:
-    #   await channel.send("SampleDiscordBot has started and is now online!")
-@bot.event
-async def on_message(message):
-	# CHECKS IF THE MESSAGE THAT WAS SENT IS EQUAL TO "HELLO".
-    if message.content == "hello":
-        # SENDS A MESSAGE BACK TO THE CHANNEL.
-        await message.channel.send("hey dirtbag")
-        sender=str(message.author.id)
-        user=str(message.author.name)
-        c.execute("SELECT discordid FROM cwiki_schema.accounts WHERE EXISTS(SELECT * FROM cwiki_schema.accounts WHERE discordid=%s)", (sender,))
-        if c.fetchone():
-            c.execute("SELECT username FROM accounts WHERE discordid=%s", (sender,))
-            username=c.fetchone()
-            await message.channel.send("Username: "+str(username[0]))
-            print("user found")
-        else: 
-            c.execute("INSERT INTO cwiki_schema.accounts (discordid, username) VALUES (%s, %s)", (sender, user))
-            conn.commit()
-            print("user not found")
-        # await message.channel.send(user)
+
+# Adds an defenition to an SQL table linked to the specified word. If the user is not already in the database, they are added.    
 @bot.hybrid_command(name="entry", description="Create an entry for a term or word.")        
 async def entry(message, word: str = "", definition: str =""):
     if word == "" or definition == "":
@@ -81,7 +67,8 @@ async def entry(message, word: str = "", definition: str =""):
             c.execute("INSERT INTO cwiki_schema.accounts (discordid, username) VALUES (%s, %s)", (sender, user))
             conn.commit()
             print("user not found")
-        #find user id and word id
+        
+        #Find userid and wordid
         c.execute("SELECT userid FROM cwiki_schema.accounts WHERE discordid=%s", (sender,))
         temp=c.fetchone()
         userid= int(temp[0])
@@ -90,23 +77,25 @@ async def entry(message, word: str = "", definition: str =""):
         temp=c.fetchone()
         wordid=int(temp[0])
         print(wordid)
-        #add definition
+
+        #Add definition to SQL table
         today = date.today()
         print(today)
         c.execute("INSERT INTO cwiki_schema.definitions (wordid, definition, userid, date) VALUES (%s, %s, %s, %s)", (wordid, definition, userid, today))
         conn.commit()
 
+# Explains how to use the bot and what the various commands and buttons mean.   
 bot.remove_command("help")
 @bot.hybrid_command(name="help", description="C-wiki tutorial")        
 async def helpmessage(message):
     print("hello")
-    embed = discord.Embed(title="Help", description="C-wiki tutorial", color=discord.Color.random())
     embed = discord.Embed(title="Help", description="C-wiki tutorial", color=discord.Color.blue())
     embed.add_field(name="/entry",value="Add an entry to C-wiki by entering the **word** you want to define, as well as its **definition**. \n\nFor example: /entry word:term definition:example",inline=True)
     embed.add_field(name="/define",value="See a list of definitions by entering the **word** you wish to see definitions of. You can also filter definitions by specifying the **member** who created them. \n\nFor example: /define word:term member:@Cwiki",inline=True)
     embed.add_field(name="Wooks: 📈 and 📉",value="Users can vote on entries by accessing their defintions and clicking the 📈 and 📉 buttons to add or subtract 'wooks'.",inline=True)
     await message.reply(embed=embed)
 
+# 
 class DefView(discord.ui.View):
     current: int = 0
     max: int = 1
@@ -115,6 +104,8 @@ class DefView(discord.ui.View):
     server: str = ""
     current_definition: str = ""
     best: bool = False
+
+    # Recieves and interprets user input from /define
     async def send(self, message, word: str = "term", member: discord.Member = None, best: bool = False):
         self.word = word
         self.member = member
@@ -152,7 +143,7 @@ class DefView(discord.ui.View):
         await self.update_page()
         
         
-    
+    # Creates embed with relevant definitions
     def create_page(self):
         colors = [discord.Colour.green(), discord.Colour.yellow(), discord.Colour.orange(), discord.Colour.red(), discord.Colour.purple()]
         thresholds = [5, 15, 30, 50, 100]
@@ -220,8 +211,12 @@ class DefView(discord.ui.View):
                 print("[in create] wasn't able to fetch list of definitions")
         else:
             print("[in create] wasn't able to get words")
+
+    # Updates embed        
     async def update_page(self):
         await self.message.edit(embed = self.create_page(), view = self)
+
+    # Switches embed to the next definition   
     @discord.ui.button(label="⬅️", style=discord.ButtonStyle.blurple)
     async def back_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         await interaction.response.defer()
@@ -229,6 +224,8 @@ class DefView(discord.ui.View):
         if self.current < 0:
             self.current = self.max - 1
         await self.update_page()
+
+    # Switches embed to the previous definition 
     @discord.ui.button(label="➡️", style=discord.ButtonStyle.blurple)
     async def next_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         await interaction.response.defer()
@@ -236,6 +233,8 @@ class DefView(discord.ui.View):
         if self.current >= self.max:
             self.current = 0
         await self.update_page()
+
+    # Increments wooks by 1 when pressed
     @discord.ui.button(label="📈", style=discord.ButtonStyle.blurple)
     async def wook_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         await interaction.response.defer()
@@ -260,6 +259,9 @@ class DefView(discord.ui.View):
         c.execute("UPDATE definitions SET points = %s WHERE definitionid=%s", (points, self.current_definition))
         conn.commit()
         await self.update_page()
+
+
+    # Decrements wooks by 1 when pressed
     @discord.ui.button(label="📉", style=discord.ButtonStyle.blurple)
     async def book_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         await interaction.response.defer()
@@ -285,13 +287,14 @@ class DefView(discord.ui.View):
         conn.commit()
         await self.update_page()
 
+# Helper method for /summarize that utilizes the pre-trained Bart Transformer Model
 def generate_summary(text):
     inputs = tokenizer.encode(text, return_tensors="pt", max_length=1024, truncation=True)
     summary_ids = model.generate(inputs, max_length=150, min_length=50, length_penalty=2.0, num_beams=4, early_stopping=True)
     summary = tokenizer.decode(summary_ids[0], skip_special_tokens=True)
     return summary
 
-
+# Uses the pre-trained Bart Transformer Model to summarize a word in Cwiki's database based on its top 3 definition
 @bot.hybrid_command(name="summarize", description="Summarize existing definitions with AI.")
 async def summarize(message, word: str=""):
     await message.defer()
@@ -304,7 +307,7 @@ async def summarize(message, word: str=""):
         if temp:
             wordid = int(temp[0])
             c.execute("SELECT definition FROM definitions WHERE wordid=%s ORDER BY points DESC", (wordid,))
-            #check how many defs
+            #Checks how many definitions
             temp = c.fetchall()
             if temp:
                 if len(temp) > 2:
@@ -322,7 +325,8 @@ async def summarize(message, word: str=""):
             await message.reply("That word has not been defined.")
             run = False 
 
-
+# Retrieves all definitions for the specified word. 
+# Takes in parameters for the author of the desired definition and for whether or not the definitions should be ordered by their number of wooks.
 @bot.hybrid_command(name="define", description="Retrieve a collection of definitions for a term if it has been defined in this server.")
 async def define(message, word: str = "", member:discord.Member = None, best: bool = False):
     run: bool = True
