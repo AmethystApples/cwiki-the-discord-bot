@@ -2,10 +2,10 @@
 <h4>Overview</h4>
 The quick-wiki discord bot! With Cwiki, you can create, retrieve, summarize, and rank server-specific entries of any topic. To get started, use /help. 
 <h4>Installation</h4>
->pip install discord.py
->pip install python-dotenv
->pip install mysql 
->pip install transformers
+> pip install discord.py
+> pip install python-dotenv
+> pip install MySQL 
+> pip install transformers
 <h4>Commands</h4>
 <h6>/entry</h6>
 Adds a new word and its definition to the database. Usage: /entry word:<term> definition:<definition>
@@ -17,7 +17,6 @@ Generates a summary of definitions for a specified term using AI. Usage: /summar
 Provides a tutorial on how to use the bot's commands.
 <h4>Wooking</h4>
 Users can vote on entries by accessing their definitions and clicking the 📈 and 📉 buttons to add or subtract 'wooks'. Wooks are Cwiki’s point system for ranking definitions.
-
 <h4>Credits</h4>
 @article{lewis2019bart,
     title = {BART: Denoising Sequence-to-Sequence Pre-training for Natural
