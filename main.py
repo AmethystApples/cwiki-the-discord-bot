@@ -92,7 +92,7 @@ async def helpmessage(message):
     embed = discord.Embed(title="Help", description="C-wiki tutorial", color=discord.Color.blue())
     embed.add_field(name="/entry",value="Add an entry to C-wiki by entering the **word** you want to define, as well as its **definition**. \n\nFor example: /entry word:term definition:example",inline=True)
     embed.add_field(name="/define",value="See a list of definitions by entering the **word** you wish to see definitions of. You can also filter definitions by specifying the **member** who created them. \n\nFor example: /define word:term member:@Cwiki",inline=True)
-    embed.add_field(name="Wooks: 📈 and 📉",value="Users can vote on entries by accessing their defintions and clicking the 📈 and 📉 buttons to add or subtract 'wooks'.",inline=True)
+    embed.add_field(name="Wooks: 📈 and 📉",value="Users can vote on entries by accessing their definitions and clicking the 📈 and 📉 buttons to add or subtract 'wooks'.",inline=True)
     await message.reply(embed=embed)
 
 # 
