@@ -3,10 +3,11 @@
 The quick-wiki discord bot! With Cwiki, you can create, retrieve, summarize, and rank server-specific entries of any topic. To get started, use /help. 
 
 <h4>Installation</h4>
-> pip install discord.py
-> pip install python-dotenv
-> pip install MySQL 
-> pip install transformers
+```
+pip install discord.py
+pip install python-dotenv
+pip install MySQL 
+pip install transformers```
 
 <h4>Commands</h4>
 <h6>/entry</h6>
