@@ -1,8 +1,8 @@
 <h2>Cwiki</h2>
 <h4>Overview</h4>
 The quick-wiki discord bot! With Cwiki, you can create, retrieve, summarize, and rank server-specific entries of any topic. To get started, use /help. 
-
 <h4>Installation</h4>
+
 ```bash
 pip install discord.py
 pip install python-dotenv
