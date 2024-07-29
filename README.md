@@ -24,4 +24,4 @@ Users can vote on entries by accessing their definitions and clicking the 📈 a
     
 <h4>Credits</h4>
 
-This bot uses the pre-trained **[BART model](https://github.com/facebookresearch/fairseq/tree/main/examples/bart)** for its summarization feature
+This bot uses the pre-trained **[BART model](https://github.com/facebookresearch/fairseq/tree/main/examples/bart)** for its summarization feature.
