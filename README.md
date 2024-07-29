@@ -23,10 +23,4 @@ Provides a tutorial on how to use the bot's commands.
 Users can vote on entries by accessing their definitions and clicking the 📈 and 📉 buttons to add or subtract 'wooks'. Wooks are Cwiki’s point system for ranking definitions.
     
 <h4>Credits</h4>
-@article{lewis2019bart,
-    title = {BART: Denoising Sequence-to-Sequence Pre-training for Natural
-Language Generation, Translation, and Comprehension},
-    author = {Mike Lewis and Yinhan Liu and Naman Goyal and Marjan Ghazvininejad and Abdelrahman Mohamed and Omer Levy and Veselin Stoyanov and Luke Zettlemoyer },
-    journal={arXiv preprint arXiv:1910.13461},
-    year = {2019},
-}
+This bot uses the pre-trained [BART model](https://github.com/facebookresearch/fairseq/tree/main/examples/bart) for our summarization feature
