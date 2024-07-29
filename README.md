@@ -6,6 +6,7 @@ The quick-wiki discord bot! With Cwiki, you can create, retrieve, summarize, and
 > pip install python-dotenv
 > pip install MySQL 
 > pip install transformers
+
 <h4>Commands</h4>
 <h6>/entry</h6>
 Adds a new word and its definition to the database. Usage: /entry word:<term> definition:<definition>
