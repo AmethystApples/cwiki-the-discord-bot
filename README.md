@@ -15,8 +15,8 @@ pip install transformers
 Adds a new word and its definition to the database. Usage: /entry word:<term> definition:<definition>
 <h6>/define</h6>
 Retrieves a collection of definitions for a specified term. Usage: /define word:<term>
-<h6>/summarize</h6>
-Generates a summary of definitions for a specified term using AI. Usage: /summarize word:<term>
+<!--<h6>/summarize</h6>
+Generates a summary of definitions for a specified term using AI. Usage: /summarize word:<term>-->
 <h6>/help</h6>
 Provides a tutorial on how to use the bot's commands.
 <h4>Wooking</h4>
