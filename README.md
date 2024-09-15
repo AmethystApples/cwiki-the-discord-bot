@@ -1,6 +1,8 @@
 <h2>Cwiki</h2>
+Cwiki is meant to be a quick-and-easy customizable wiki you can access through Discord. You can save server-wide definitions for inside jokes, OC characters, and much more! Terms may have multiple definitions from different, but users can rank them thanks to our wook-and-book voting system.
+
 <h4>Overview</h4>
-The quick-wiki discord bot! With Cwiki, you can create, retrieve, summarize, and rank server-specific entries of any topic. To get started, use /help. 
+The quick-wiki discord bot! With Cwiki, you can create, retrieve, and rank server-specific entries of any topic. To get started, use /help. 
 <h4>Installation</h4>
 
 ```bash
