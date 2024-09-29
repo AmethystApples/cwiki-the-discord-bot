@@ -22,6 +22,7 @@ STARTUP_CHANNEL_ID = 1252983015169196177
 # Used for modifying SQL tables
 conn = mysql.connector.connect(host="localhost",user="root", password="8o0k3d@ndW0ok3d",database="cwiki_schema")
 c=conn.cursor(buffered=True)
+conn.execute('set max_allowed_packet=67108864')
 
 # Function for bot startup
 @bot.event
@@ -39,6 +40,8 @@ async def on_ready():
 # Adds an defenition to an SQL table linked to the specified word. If the user is not already in the database, they are added.    
 @bot.hybrid_command(name="entry", description="Create an entry for a term or word.")        
 async def entry(message, word: str = "", definition: str =""):
+    if not conn.is_connected():
+        conn.reconnect(attempts=3, delay=5)
     if word == "" or definition == "":
         await message.reply("You have not entered a term and/or its entry.")
     else:
@@ -287,6 +290,8 @@ class DefView(discord.ui.View):
 # Takes in parameters for the author of the desired definition and for whether or not the definitions should be ordered by their number of wooks.
 @bot.hybrid_command(name="define", description="Retrieve a collection of definitions for a term if it has been defined in this server.")
 async def define(message, word: str = "", member:discord.Member = None, best: bool = False):
+    if not conn.is_connected():
+        conn.reconnect(attempts=3, delay=5)
     run: bool = True
     if word=="":
         await message.reply("Please input a word.")
