@@ -22,7 +22,7 @@ STARTUP_CHANNEL_ID = 1252983015169196177
 # Used for modifying SQL tables
 conn = mysql.connector.connect(host="localhost",user="root", password="8o0k3d@ndW0ok3d",database="cwiki_schema")
 c=conn.cursor(buffered=True)
-conn.execute('set max_allowed_packet=67108864')
+c.execute('set max_allowed_packet=67108864')
 
 # Function for bot startup
 @bot.event
