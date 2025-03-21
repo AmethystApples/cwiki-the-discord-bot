@@ -316,7 +316,7 @@ async def define(message, word: str = "", member:discord.Member = None, best: bo
             await message.reply("That word has not been defined.")
             run = False
     if run:
-        definition_view = DefView(timeout=None)
+        definition_view = DefView(timeout=60)
         word = word.upper()
         await definition_view.send(message, word, member, best)
 
